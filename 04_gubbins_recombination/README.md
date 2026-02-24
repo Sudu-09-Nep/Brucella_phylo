@@ -16,3 +16,15 @@ core.full.iteration_5.internal.joint.aln
 
 This alignment is used to derive the core SNP alignment for the final phylogeny.
 
+
+
+## Why Gubbins?
+
+I picked Gubbins because I did not want recombination to mislead my tree.
+Gubbins:
+- iteratively builds trees and detects recombination on branches
+- masks recombinant regions
+- outputs a recombination-filtered alignment for SNP-based phylogeny
+
+This helped me separate vertical signal (true clonal history) from
+horizontal recombination, which is important for *Brucella*.
