@@ -16,3 +16,13 @@ Steps:
 
 The file core.full.aln is the starting point for recombination analysis with Gubbins.
 
+
+## Why build `core.full.aln` manually?
+
+Most tutorials jump straight from Snippy to Gubbins, but I wanted to see
+exactly how a whole-genome alignment is constructed.
+
+By concatenating contigs in a fixed order, I understood that:
+- Gubbins needs constant + variable sites, not only SNPs.
+- The alignment length is the “reference genome” length.
+- Any mistake in contig order would scramble the downstream tree.
