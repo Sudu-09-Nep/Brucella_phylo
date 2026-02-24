@@ -20,3 +20,15 @@ snps.aligned.fa: Per-sample alignment vs reference, used to build the core align
 snps.vcf: SNP calls.
 
 snps.consensus.fa: Consensus sequence including variants.
+
+## Why Snippy?
+
+I chose Snippy because it takes assembled genomes and a single reference
+and gives me:
+- a clean per-sample alignment (`snps.aligned.fa`)
+- SNP calls in VCF format
+
+I did not want to write my own variant-calling pipeline or worry about
+indexing, pileups, and filtering; Snippy wraps all of that in a single
+command tuned for bacterial genomes.
+
