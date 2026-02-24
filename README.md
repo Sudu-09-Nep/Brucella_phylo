@@ -1,4 +1,4 @@
-# Brucella / Ochrobactrum recombination-aware core-genome phylogenomics
+# Brucella recombination-aware core-genome phylogenomics
 
 This repository is a **step-by-step story** of how I went from assembled
 genomes to a recombination-filtered core SNP phylogeny using Snippy,
