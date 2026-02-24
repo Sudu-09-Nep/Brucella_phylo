@@ -21,3 +21,16 @@ clean.core.aln: Recombination-free core SNP alignment.
 
 clean.core.aln.treefile: Final ML phylogeny of all genomes.
 
+
+## Why snp-sites and IQ-TREE?
+
+`snp-sites` takes the recombination-filtered alignment and keeps only
+variable positions, giving a compact core-SNP alignment.
+
+IQ-TREE:
+- automatically tests models
+- gives bootstrap and SH-aLRT support
+- is widely used for bacterial core-genome trees
+
+Together, they give a fast, well-supported ML tree on recombination-free
+SNPs instead of raw whole-genome alignments.
