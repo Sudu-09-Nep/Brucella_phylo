@@ -4,11 +4,13 @@ This step runs Gubbins on `core.full.aln` to detect and mask recombination.
 
 Example command:
 
-bash
+```bash
 run_gubbins.py --prefix gubbins_fast \
                --threads 24 \
                --tree-builder fasttree \
                ../03_core_alignment/core.full.aln
+```
+
 Gubbins iteratively builds trees, reconstructs ancestral states, and masks recombination.
 The key recombination-filtered alignment from iteration 5 is:
 
