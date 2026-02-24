@@ -1,220 +1,151 @@
 # Brucella / Ochrobactrum recombination-aware core-genome phylogenomics
 
-This repository contains a fully reproducible pipeline to build a recombination-filtered core-genome SNP phylogeny from complete and draft genomes using **Snippy**, **Gubbins**, **snp-sites**, and **IQ-TREE**.  
-It starts from assembled genomes (including a polished *Brucella* genome of interest and RefSeq assemblies from NCBI Datasets) and ends with a maximum-likelihood tree based on recombination-free core SNPs.
+This repository is a **step-by-step story** of how I went from assembled
+genomes to a recombination-filtered core SNP phylogeny using Snippy,
+Gubbins, snp-sites, and IQ-TREE.
 
-## Overview
+When I first ran this pipeline, I could execute the commands but did not
+really understand what each tool was doing or why I chose it.  
+Here, each folder is a chapter that explains:
 
-Main steps:
+- what was done at that step  
+- which files matter  
+- why that tool/approach was used (not just how to run it)
 
-1. Prepare inputs (reference genome, custom assembly, and 80+ RefSeq genomes from NCBI Datasets).
-2. Run **Snippy** per genome against a single reference to generate per-sample SNP alignments. [Snippy][snippy]
-3. Construct a whole-genome alignment (`core.full.aln`) by concatenating contigs in a consistent order across all samples.
-4. Run **Gubbins** on `core.full.aln` to detect and mask recombination. [Gubbins][gubbins]
-5. Use **snp-sites** to extract recombination-free core SNPs.
-6. Build a maximum-likelihood phylogeny with **IQ-TREE** on the recombination-filtered core SNP alignment.
-
-The final outputs are a recombination-aware core-genome tree and the corresponding alignment.
+The goal is that you can understand the reasoning, not just re-run the
+commands.
 
 ---
 
-## 1. Input data and directory structure
+## Project structure (chapters of the story)
 
-Working directory (this repo):
+- `01_inputs/` – starting genomes and metadata  
+- `02_snippy_runs/` – per-genome variant calling vs a single reference (Snippy)  
+- `03_core_alignment/` – whole-genome alignment (`core.full.aln`) construction  
+- `04_gubbins_recombination/` – recombination detection and masking (Gubbins)  
+- `05_core_SNP_tree/` – recombination-free core SNP alignment and ML tree (snp-sites + IQ-TREE)  
+- `NCBI_README.md` – original README from the NCBI Datasets download
 
-bash
-brucella_phylo/
-├── alignments/
-├── ncbi_dataset/
-├── snippy_runs/
-├── my_brucella.fna
-├── ref.fna
-├── input.tab
-└── README.md
+Each of these folders has its own `README.md` describing the logic of
+that step, key commands, and the important outputs.
 
-Key files and folders:
+---
 
-ref.fna – reference genome (e.g. Brucella anthropi).
+## 01 – Inputs (what data goes in)
 
-my_brucella.fna – polished assembly of the focal strain.
+Folder: `01_inputs/`
 
-ncbi_dataset/ – NCBI Datasets genome package (RefSeq assemblies and metadata). NCBI Datasets
+This chapter collects all the starting material:
 
-input.tab – two-column tab-delimited file: sample ID and absolute path to each .fna file.
+- `ref.fna` – reference genome (*Brucella/Ochrobactrum* sp.)  
+- `my_brucella.fna` – polished assembly of the focal isolate  
+- `input.tab` – two-column table: sample ID and absolute path to each assembly  
+- `gcf_genomes.list` – list of NCBI RefSeq/GenBank accessions
 
-snippy_runs/ – per-sample Snippy outputs (created by this pipeline).
+These files define which genomes are included and what “reference view”
+Snippy will use for all samples.
 
-alignments/ – constructed whole-genome and core-SNP alignments, Gubbins and IQ-TREE outputs.
+---
 
-Example input.tab format:
+## 02 – Per-genome variant calling (Snippy)
 
-GCF_000017405.1_ASM1740v1_genomic    /full/path/ncbi_dataset/data/GCF_000017405.1/GCF_000017405.1_ASM1740v1_genomic.fna
-...
-my_brucella                           /full/path/brucella_phylo/my_brucella.fna
+Folder: `02_snippy_runs/`
 
+Here I use **Snippy** to compare each genome to the same reference and
+produce per-sample alignments and VCFs.
 
+Conceptually, Snippy:
 
-2. Per-genome variant calling with Snippy
-Snippy is used to call SNPs and small indels for each genome against the same reference (ref.fna), producing per-sample snps.aligned.fa and VCF files. [web:40][web:20]
+- maps each assembly to `ref.fna`  
+- calls SNPs and small indels  
+- outputs `snps.aligned.fa`, which is the reference sequence with
+  sample-specific bases substituted at variant sites
 
-Activate the environment and run Snippy for all genomes in input.tab:
-micromamba activate snippy_clean   # or: conda activate snippy_clean
+I chose Snippy because it wraps mapping, variant calling, and basic
+filtering into a single command tuned for bacterial genomes, so I don’t
+have to glue together multiple tools myself.
 
+---
 
+## 03 – Whole-genome alignment (`core.full.aln`)
 
-bash
-cd /path/to/brucella_phylo
+Folder: `03_core_alignment/`
 
-while read id path; do
-    echo "Running snippy on $id"
-    snippy --ctgs "$path" \
-           --ref ref.fna \
-           --outdir snippy_runs/$id \
-           --cpus 4 \
-           --force
-done < input.tab
+From all the `snps.aligned.fa` files, I build a whole-genome alignment
+where:
 
-Check you have outputs for all samples:
+- each row is a genome  
+- all sequences have the same length (the reference length)  
+- both constant and variable sites are present
 
-find snippy_runs -type f -name snps.aligned.fa | wc -l
-# expect: number of samples in input.tab
+Instead of relying on a “magic” script, I explicitly:
 
+1. Use one representative Snippy output to define contig order.  
+2. Concatenate contigs in that fixed order for every sample.
 
+This made me understand that Gubbins needs a full alignment with constant
+sites, and that contig order matters for keeping the genome structure
+comparable across isolates.
 
-3. Define contig order for whole-genome alignment
-To build a whole-genome alignment with constant sites, we concatenate contigs in a fixed order using one representative Snippy alignment (here, my_brucella). [web:23]
+---
 
-bash
-cd /path/to/brucella_phylo
+## 04 – Recombination analysis (Gubbins)
 
-grep '^>' snippy_runs/my_brucella/snps.aligned.fa \
-  | sed 's/^>//' \
-  | awk '{print $1}' \
-  > ref_contigs.order
+Folder: `04_gubbins_recombination/`
 
-cat ref_contigs.order
-# Example:
-# NZ_CP064064.1
-# (additional contigs if present)
+Here I run **Gubbins** on `core.full.aln` to detect and mask
+recombination.
 
+Algorithmically, Gubbins:
 
+- iteratively builds phylogenetic trees  
+- uses ancestral reconstruction to identify clusters of SNPs that look
+  like recombination rather than vertical mutation  
+- masks those regions and rebuilds the tree until convergence
 
-4. Build whole-genome alignment core.full.aln
-We now build a full-length alignment (one sequence per genome, equal length) by concatenating contigs for all snps.aligned.fa files in the same order. This alignment includes both constant and variable sites and is suitable for Gubbins. [web:23][web:45]
+I chose Gubbins because I did not want recombination to mislead the
+phylogeny; this is especially important for organisms where horizontal
+exchange is non-negligible.
 
-bash
-cd /path/to/brucella_phylo
+The key output is a recombination-filtered alignment (e.g.
+`core.full.iteration_5.internal.joint.aln`) that represents the “clean”
+core genome signal.
 
-mkdir -p alignments
-cd alignments
+---
 
-# List all per-sample snps.aligned.fa paths
-find ../snippy_runs -type f -name snps.aligned.fa | sort > snps_paths.list
-wc -l snps_paths.list    # should equal number of samples
+## 05 – Core SNP alignment and final tree
 
-Construct the whole-genome alignment:
+Folder: `05_core_SNP_tree/`
 
-bash
-core.full.aln
-while read path; do
-    sample=$(basename "$(dirname "$path")")
-    echo "Processing $sample"
+Finally, I reduce the recombination-filtered alignment to core SNPs and
+build a maximum-likelihood tree.
 
-    echo ">$sample" >> core.full.aln
+Two key tools:
 
-    # Concatenate contigs in fixed order
-    while read contig; do
-        seqkit grep -r -p "$contig" "$path" \
-        | tail -n +2 \
-        | tr -d '\n'
-    done < ../ref_contigs.order >> core.full.aln
+- **snp-sites** – extracts only variable positions from the alignment,
+  producing a compact core-SNP matrix suitable for ML methods.  
+- **IQ-TREE** – infers a maximum-likelihood phylogeny, tests models, and
+  provides branch support (bootstraps, SH-aLRT).
 
-    echo >> core.full.aln
-done < snps_paths.list
+The important files in this chapter are:
 
-Verify that all sequences have the same length:
+- `clean.core.aln` – recombination-free core SNP alignment  
+- `clean.core.aln.treefile` – final ML tree (Newick)
 
-bash
-grep -v '^>' core.full.aln | awk '{print length}' | sort -nu
-# Single non-zero value = OK
+This chapter tells the last part of the story: how the clonal
+relationships among genomes look after accounting for recombination.
 
+---
 
+## What this repo tries to teach
 
-5. Recombination analysis with Gubbins
-Gubbins iteratively identifies recombination and masks those regions to produce a recombination-filtered alignment.
+This repository is not only a record of commands; it is a learning
+exercise:
 
-Run Gubbins on the whole-genome alignment:
+- to see how per-genome SNP calling becomes a shared core alignment  
+- to understand why recombination must be filtered  
+- to link each command to its conceptual role in the analysis
 
-bash
-cd /path/to/brucella_phylo/alignments
-
-run_gubbins.py --prefix gubbins_fast \
-               --threads 24 \
-               --tree-builder fasttree \
-               core.full.aln
-Key outputs include:
-
-gubbins_fast.final_tree.tre – phylogeny inferred from recombination-filtered sites.
-
-gubbins_fast.filtered_polymorphic_sites.fasta – recombination-masked alignment of polymorphic sites.
-
-If a run stops after iteration 5 but fails to write the final summary files, the recombination-corrected alignment can be recovered from:
-
-bash
-alignments/tmph*/core.full.iteration_5.internal.joint.aln
-This file is equivalent to what Gubbins would use to generate gubbins_fast.filtered_polymorphic_sites.fasta
-
-
-6. Core SNP alignment and IQ-TREE phylogeny
-To obtain a compact core-SNP alignment for phylogenetic inference, we use snp-sites on the recombination-filtered alignment and then run IQ-TREE.
-
-Example using a Gubbins iteration 5 alignment:
-
-bash
-# Extract core SNPs from recombination-filtered alignment
-snp-sites -c core.full.iteration_5.tre.snp_sites.aln > clean.core.aln
-
-# Inspect length
-grep -v '^>' clean.core.aln | awk '{print length}' | sort -nu
-Build a maximum-likelihood tree with IQ-TREE:
-
-bash
-iqtree2 -s clean.core.aln \
-        -m GTR+G \
-        -bb 1000 \
-        -alrt 1000 \
-        -nt AUTO
-Important outputs:
-
-clean.core.aln.treefile – final ML tree (Newick).
-
-clean.core.aln.iqtree – model fit, support statistics, and run diagnostics.
-
-7. Software versions
-(Example; adjust to match your environment.)
-
-Snippy: see Snippy GitHub.
-
-Gubbins: see Gubbins documentation. 
-
-snp-sites: latest release from the samtools/htslib ecosystem.
-
-IQ-TREE: IQ-TREE 2 (iqtree2).
-
-Recording exact versions here (or in an environment.yml) is recommended for full reproducibility.
-
-8. NCBI Datasets package
-The ncbi_dataset/ directory was generated using the NCBI Datasets command-line tool and contains:
-
-RefSeq genome FASTA files under ncbi_dataset/data/.
-
-Metadata files (e.g. assembly_data_report.jsonl, dataset_catalog.json). 
-For details on generating similar packages, see the NCBI Datasets documentation.
-
-References
-Snippy: rapid haploid variant calling and core-genome alignment.
-Gubbins: iterative recombination detection and recombination-free phylogenies. 
-
-NCBI Datasets: download genome data packages and metadata from RefSeq/GenBank.
-
-
+If you follow the chapters in order and read the `README.md` files in
+each folder, you should be able to understand **why** each tool appears,
+what data structure it expects, and what it produces.
