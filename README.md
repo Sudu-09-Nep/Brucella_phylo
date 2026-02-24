@@ -22,7 +22,7 @@ The final outputs are a recombination-aware core-genome tree and the correspondi
 
 Working directory (this repo):
 
-```bash
+bash
 brucella_phylo/
 ├── alignments/
 ├── ncbi_dataset/
@@ -53,12 +53,16 @@ GCF_000017405.1_ASM1740v1_genomic    /full/path/ncbi_dataset/data/GCF_000017405.
 my_brucella                           /full/path/brucella_phylo/my_brucella.fna
 
 
+
 2. Per-genome variant calling with Snippy
 Snippy is used to call SNPs and small indels for each genome against the same reference (ref.fna), producing per-sample snps.aligned.fa and VCF files. [web:40][web:20]
 
 Activate the environment and run Snippy for all genomes in input.tab:
 micromamba activate snippy_clean   # or: conda activate snippy_clean
 
+
+
+bash
 cd /path/to/brucella_phylo
 
 while read id path; do
@@ -74,6 +78,8 @@ Check you have outputs for all samples:
 
 find snippy_runs -type f -name snps.aligned.fa | wc -l
 # expect: number of samples in input.tab
+
+
 
 3. Define contig order for whole-genome alignment
 To build a whole-genome alignment with constant sites, we concatenate contigs in a fixed order using one representative Snippy alignment (here, my_brucella). [web:23]
@@ -91,6 +97,8 @@ cat ref_contigs.order
 # NZ_CP064064.1
 # (additional contigs if present)
 
+
+
 4. Build whole-genome alignment core.full.aln
 We now build a full-length alignment (one sequence per genome, equal length) by concatenating contigs for all snps.aligned.fa files in the same order. This alignment includes both constant and variable sites and is suitable for Gubbins. [web:23][web:45]
 
@@ -107,7 +115,7 @@ wc -l snps_paths.list    # should equal number of samples
 Construct the whole-genome alignment:
 
 bash
-> core.full.aln
+core.full.aln
 while read path; do
     sample=$(basename "$(dirname "$path")")
     echo "Processing $sample"
@@ -130,8 +138,10 @@ bash
 grep -v '^>' core.full.aln | awk '{print length}' | sort -nu
 # Single non-zero value = OK
 
+
+
 5. Recombination analysis with Gubbins
-Gubbins iteratively identifies recombination and masks those regions to produce a recombination-filtered alignment. [web:45]
+Gubbins iteratively identifies recombination and masks those regions to produce a recombination-filtered alignment.
 
 Run Gubbins on the whole-genome alignment:
 
@@ -155,8 +165,8 @@ alignments/tmph*/core.full.iteration_5.internal.joint.aln
 This file is equivalent to what Gubbins would use to generate gubbins_fast.filtered_polymorphic_sites.fasta
 
 
-. Core SNP alignment and IQ-TREE phylogeny
-To obtain a compact core-SNP alignment for phylogenetic inference, we use snp-sites on the recombination-filtered alignment and then run IQ-TREE. [web:23][web:20][web:43]
+6. Core SNP alignment and IQ-TREE phylogeny
+To obtain a compact core-SNP alignment for phylogenetic inference, we use snp-sites on the recombination-filtered alignment and then run IQ-TREE.
 
 Example using a Gubbins iteration 5 alignment:
 
@@ -183,9 +193,9 @@ clean.core.aln.iqtree – model fit, support statistics, and run diagnostics.
 7. Software versions
 (Example; adjust to match your environment.)
 
-Snippy: see Snippy GitHub. [web:40]
+Snippy: see Snippy GitHub.
 
-Gubbins: see Gubbins documentation. [web:45]
+Gubbins: see Gubbins documentation. 
 
 snp-sites: latest release from the samtools/htslib ecosystem.
 
@@ -198,15 +208,13 @@ The ncbi_dataset/ directory was generated using the NCBI Datasets command-line t
 
 RefSeq genome FASTA files under ncbi_dataset/data/.
 
-Metadata files (e.g. assembly_data_report.jsonl, dataset_catalog.json). [web:32][web:33][web:44]
-
-For details on generating similar packages, see the NCBI Datasets documentation. [web:32][web:38]
+Metadata files (e.g. assembly_data_report.jsonl, dataset_catalog.json). 
+For details on generating similar packages, see the NCBI Datasets documentation.
 
 References
-Snippy: rapid haploid variant calling and core-genome alignment. [web:40][web:20]
+Snippy: rapid haploid variant calling and core-genome alignment.
+Gubbins: iterative recombination detection and recombination-free phylogenies. 
 
-Gubbins: iterative recombination detection and recombination-free phylogenies. [web:45]
-
-NCBI Datasets: download genome data packages and metadata from RefSeq/GenBank. [web:32][web:33][web:44]
+NCBI Datasets: download genome data packages and metadata from RefSeq/GenBank.
 
 
