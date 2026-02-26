@@ -1,1 +1,26 @@
+name: brucella-phylo
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.11
+  - snippy
+  - gubbins
+  - iqtree2
+  - snp-sites
+  - mafft            # if you ever realign anything
+  - biopython        # for any small scripts
+  - pandas           # optional, for tables
+  - matplotlib       # optional, for quick plots
 
+
+snippy from bioconda.
+
+gubbins from bioconda.
+​
+
+iqtree2 is the v2 binary (installed via iqtree2 package).
+​
+
+snp-sites from bioconda for core-SNP extraction.
