@@ -47,7 +47,50 @@ Snippy will use for all samples.
 
 ---
 
-## 02 – Per-genome variant calling (Snippy)
+## 02 - Environment and tools
+
+All steps in this repository can be run from a single conda environment
+defined in `environment.yml`:
+
+```bash
+mamba env create -f environment.yml
+mamba activate env_name
+```
+you can alternatively use conda:
+
+```bash
+conda env create -f environment.yml
+conda activate env_name
+```
+
+Key tools per chapter:
+
+02_snippy_runs/
+
+Snippy (snippy) for per-genome variant calling vs the reference.
+
+03_core_alignment/
+
+Shell utilities and (optionally) Biopython to build core.full.aln
+from Snippy outputs.
+
+04_gubbins_recombination/
+
+Gubbins (run_gubbins.py) to detect and mask recombination on the
+whole-genome alignment.
+
+05_core_SNP_tree/
+
+snp-sites (snp-sites) to extract the core SNP alignment.
+
+IQ-TREE 2 (iqtree2) to infer the final maximum-likelihood tree.
+
+I use mamba here, but conda or micromamba will also work with the
+same environment.yml.
+
+
+
+## 03 – Per-genome variant calling (Snippy)
 
 Folder: `02_snippy_runs/`
 
@@ -67,7 +110,7 @@ have to glue together multiple tools myself.
 
 ---
 
-## 03 – Whole-genome alignment (`core.full.aln`)
+## 04 – Whole-genome alignment (`core.full.aln`)
 
 Folder: `03_core_alignment/`
 
@@ -89,7 +132,7 @@ comparable across isolates.
 
 ---
 
-## 04 – Recombination analysis (Gubbins)
+## 05 – Recombination analysis (Gubbins)
 
 Folder: `04_gubbins_recombination/`
 
@@ -113,7 +156,7 @@ core genome signal.
 
 ---
 
-## 05 – Core SNP alignment and final tree
+## 06 – Core SNP alignment and final tree
 
 Folder: `05_core_SNP_tree/`
 
