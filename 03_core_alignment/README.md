@@ -6,22 +6,78 @@ Here we combine all `snps.aligned.fa` files into a single whole-genome alignment
 Steps:
 
 1. Use one sample (here `my_brucella`) to define contig order:
+In your working directory. In my case it is:- 
 
-   ```bash
-   grep '^>' ../02_snippy_runs/snippy_runs/my_brucella/snps.aligned.fa \
-     | sed 's/^>//' | awk '{print $1}' > ref_contigs.order
+```bash
+cd ~/Documents/Pradu/Sudu/Trycycler_Brucella/brucella_phylo
 
-2. Build core.full.aln by concatenating contigs in that order for every sample.
+grep '^>' ref.fna \
+  | sed 's/^>//' \
+  | awk '{print $1}' > ref_contigs.order
+
+head ref_contigs.order
+```
+This ensures that we always concatenate contigs in the same order(e.g. chromosome 1, chromosome 2...... plasmids for every genome)
+This also makes all sequences in final alignment aligned in coordinate space(position X always mean the same locus in the reference).
+
+2. Inside alignments
+```bash
+cd ~/Documents/Pradu/Sudu/Trycycler_Brucella/brucella_phylo
+
+mkdir -p alignments
+cd alignments
+
+ls ../snippy_runs > samples.list
+wc -l samples.list   #Should show the number of samples you are working with.     
+```
+
+Here sample.list is the set of genomes we will include in the phylogeny( SmpleIDs = folder names in snippy_runs)
+
+3. Build core.full.aln by concatenating contigs in that order for every sample.
+
+```bash
+cd ~/Documents/Pradu/Sudu/Trycycler_Brucella/brucella_phylo/alignments
+
+> core.full.aln
+while read sample; do
+    echo "Processing $sample"
+    snpfile="../snippy_runs/$sample/snps.aligned.fa"
+
+    # FASTA header for this sample
+    echo ">$sample" >> core.full.aln
+
+    # Concatenate all contigs in the canonical reference order
+    while read contig; do
+        samtools faidx "$snpfile" "$contig" \
+        | awk 'NR>1 {printf "%s", $0}'
+    done < ../ref_contigs.order >> core.full.aln
+
+    echo >> core.full.aln  # newline after sequence
+done < samples.list
+
+```
 
 The file core.full.aln is the starting point for recombination analysis with Gubbins.
+**What happens mathematically here is:**
+For each sample:
+
+- For each sample:
+    - For each reference contig in `ref_contigs.order`:
+        - `samtools faidx` pulls the aligned sequence for that contig from `snps.aligned.fa`.
+        - `awk 'NR>1 {printf "%s", $0}'` removes header and joins lines into one continuous string.
+    - All contig strings are concatenated into one long sequence of length ≈ genome size of reference.
+- Each line in `core.full.aln` corresponds to **one genome** as a complete, reference-aligned sequence.
+
+Check:
+
+```bash
+`grep -c '^>' core.full.aln    # 186 (one per line in samples.list)
+grep -v '^>' core.full.aln | awk '{print length}' | sort -nu
+# You should see a single length value (all sequences same length)`
+```
+
+**Concept:**
+
+`core.full.aln` is a  **whole-genome alignment**: 1 sequence per genome, all on PBO_ref coordinates, including constant and variable sites.
 
 
-## Why build `core.full.aln` manually?
-
-Most tutorials jump straight from Snippy to Gubbins, but I wanted to see
-exactly how a whole-genome alignment is constructed.
-
-By concatenating contigs in a fixed order, I understood that:
-- Gubbins needs constant + variable sites, not only SNPs.
-- The alignment length is the “reference genome” length.
-- Any mistake in contig order would scramble the downstream tree.
