@@ -5,22 +5,30 @@ This step uses Snippy to call variants for each genome against `ref.fna`.
 Main command:
 
 ```bash
-while read id path; do
-  snippy --ctgs "$path" \
-         --ref ../01_inputs/ref.fna \
-         --outdir snippy_runs/$id \
-         --cpus 4 \
-         --force
-done < ../01_inputs/input.tab
+while IFS=$'\t' read -r sample r1 r2; do
+    snippy \
+      --outdir snippy_runs/"$sample" \
+      --ref ref.fna \
+      --r1 "$r1" --r2 "$r2"
+done < input.tab
+```
+Key outputs (per sample in snippy_runs/):
+Result:
+```bash
+ls snippy_runs/
+GCA_000017405.1  GCA_000251205.1  ...  GCF_900454235.1  MyBrucella  PBO_ref
+
+ls snippy_runs/MyBrucella
+snps.aligned.fa  snps.vcf  snps.raw.vcf  ...
 ```
 
-Key outputs (per sample in snippy_runs/):
+Here, Each `snps.aligned.fa` is a **per-sample alignment to the reference**, with:
 
-snps.aligned.fa: Per-sample alignment vs reference, used to build the core alignment.
+- Headers = reference contig names (chromosomes/plasmids).
+- Sequences = that sample’s consensus sequence at each reference position, including SNPs and gaps.
+
 
 snps.vcf: SNP calls.
-
-snps.consensus.fa: Consensus sequence including variants.
 
 ## Why Snippy?
 
