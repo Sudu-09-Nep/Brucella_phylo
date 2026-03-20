@@ -65,25 +65,25 @@ conda activate env_name
 
 Key tools per chapter:
 
-02_snippy_runs/
+**02_snippy_runs/**
 
-Snippy (snippy) for per-genome variant calling vs the reference.
+- Snippy (snippy) for per-genome variant calling vs the reference.
 
-03_core_alignment/
+**03_core_alignment/**
 
-Shell utilities and (optionally) Biopython to build core.full.aln
+- Shell utilities and (optionally) Biopython to build core.full.aln
 from Snippy outputs.
 
-04_gubbins_recombination/
+**04_gubbins_recombination/**
 
-Gubbins (run_gubbins.py) to detect and mask recombination on the
+- Gubbins (run_gubbins.py) to detect and mask recombination on the
 whole-genome alignment.
 
-05_core_SNP_tree/
+**05_core_SNP_tree/**
 
-snp-sites (snp-sites) to extract the core SNP alignment.
+- snp-sites (snp-sites) to extract the core SNP alignment.
 
-IQ-TREE 2 (iqtree2) to infer the final maximum-likelihood tree.
+- IQ-TREE 2 (iqtree2) to infer the final maximum-likelihood tree.
 
 I use mamba here, but conda or micromamba will also work with the
 same environment.yml.
@@ -150,10 +150,6 @@ I chose Gubbins because I did not want recombination to mislead the
 phylogeny; this is especially important for organisms where horizontal
 exchange is non-negligible.
 
-The key output is a recombination-filtered alignment (e.g.
-`core.full.iteration_5.internal.joint.aln`) that represents the “clean”
-core genome signal.
-
 ---
 
 ## 06 – Core SNP alignment and final tree
@@ -170,17 +166,12 @@ Two key tools:
 - **IQ-TREE** – infers a maximum-likelihood phylogeny, tests models, and
   provides branch support (bootstraps, SH-aLRT).
 
-The important files in this chapter are:
-
-- `clean.core.aln` – recombination-free core SNP alignment  
-- `clean.core.aln.treefile` – final ML tree (Newick)
-
 This chapter tells the last part of the story: how the clonal
 relationships among genomes look after accounting for recombination.
 
 ---
 
-## What this repo tries to teach
+## 07 - What this repo tries to teach
 
 This repository is not only a record of commands; it is a learning
 exercise:
@@ -192,3 +183,6 @@ exercise:
 If you follow the chapters in order and read the `README.md` files in
 each folder, you should be able to understand **why** each tool appears,
 what data structure it expects, and what it produces.
+
+## 08 - Final Cheat Code
+If you want all codes in one shot:- you can visit `run_pipelines.sh`.
