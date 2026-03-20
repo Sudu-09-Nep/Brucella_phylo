@@ -185,4 +185,4 @@ each folder, you should be able to understand **why** each tool appears,
 what data structure it expects, and what it produces.
 
 ## 08 - Final Cheat Code
-If you want all codes in one shot:- you can visit `run_pipelines.sh`.
+If you want all codes in one shot:- you can visit `run_pipeline.sh`.
