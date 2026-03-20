@@ -82,7 +82,13 @@ grep -v '^>' core.full.aln | awk '{print length}' | sort -nu
 
 
 
+
+
+
 ***NOTE ON METHODOLOGY***
+
+
+
 Instead of employing traditional Multiple Sequence Alignment (MSA) algorithms (e.g., MAFFT, MUSCLE), which are computationally intensive for large bacterial genomes and can struggle with rearrangements, a reference-based variant projection approach was used.
 
 Variant Mapping: Each assembly was mapped against the reference genome (Brucella sp.) using Snippy v4.6.0. This identified SNPs and indels while maintaining the reference coordinate system for every isolate.
