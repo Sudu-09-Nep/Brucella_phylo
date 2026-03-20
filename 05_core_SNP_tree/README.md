@@ -7,24 +7,21 @@ Commands:
 
 # Core SNP alignment
 ```bash
-snp-sites -c ../04_gubbins_recombination/core.full.iteration_5.tre.snp_sites.aln > clean.core.aln
+cd ~/Documents/Pradu/Sudu/Trycycler_Brucella/brucella_phylo/alignments
+
+# Extract core SNP alignment (no invariant sites)
+snp-sites -c gubbins_raxml.filtered_polymorphic_sites.fasta > core_snps_gubbins.aln
+
+# Build ML tree with support
+iqtree2 -s core_snps_gubbins.aln -m GTR+G -bb 1000 -alrt 1000 -nt AUTO
 ```
 
-# Maximum-likelihood tree with IQ-TREE
-
-```bash
-iqtree2 -s clean.core.aln \
-        -m GTR+G \
-        -bb 1000 \
-        -alrt 1000 \
-        -nt AUTO
-```
 
 Important outputs:
+Outputs:
 
-clean.core.aln: Recombination-free core SNP alignment.
-
-clean.core.aln.treefile: Final ML phylogeny of all genomes.
+- `core_snps_gubbins.aln.treefile` – ML core SNP tree (branch lengths on recombination‑cleaned SNPs).
+- `.iqtree` / `.log` – model fit and support values.
 
 
 ## Why snp-sites and IQ-TREE?
@@ -34,7 +31,7 @@ variable positions, giving a compact core-SNP alignment.
 
 IQ-TREE:
 - automatically tests models
-- gives bootstrap and SH-aLRT support
+- gives robust ML inference with bootstrap and SH-aLRT support, so that we can compare its topology to - `gubbins_raxml.final_tree.tre`.
 - is widely used for bacterial core-genome trees
 
 Together, they give a fast, well-supported ML tree on recombination-free
