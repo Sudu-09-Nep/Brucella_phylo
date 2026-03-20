@@ -81,3 +81,14 @@ grep -v '^>' core.full.aln | awk '{print length}' | sort -nu
 `core.full.aln` is a  **whole-genome alignment**: 1 sequence per genome, all on PBO_ref coordinates, including constant and variable sites.
 
 
+
+***NOTE ON METHODOLOGY***
+Instead of employing traditional Multiple Sequence Alignment (MSA) algorithms (e.g., MAFFT, MUSCLE), which are computationally intensive for large bacterial genomes and can struggle with rearrangements, a reference-based variant projection approach was used.
+
+Variant Mapping: Each assembly was mapped against the reference genome (Brucella sp.) using Snippy v4.6.0. This identified SNPs and indels while maintaining the reference coordinate system for every isolate.
+
+Pseudogenome Generation: For each sample, a "aligned" version of the reference was generated where variant sites were replaced by the sample-specific base, and non-variant/uncovered sites were maintained or masked.
+
+Concatenation: These fixed-length pseudogenomes were concatenated to form a whole-genome core alignment (core.full.aln).
+
+Rationale: This method ensures that every row in the final matrix is of identical length and that genomic positions remain homologous across the entire dataset. This is a prerequisite for recombination detection in Gubbins, which requires a full alignment (including constant sites) to accurately model spatial SNP density.
